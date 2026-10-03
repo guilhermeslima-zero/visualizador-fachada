@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "titulo": "Modelo de fachada — versão pública",
+    "aviso": "FERRAMENTA DE DECISÃO VISUAL — NÃO É PROJETO EXECUTIVO."
+  },
+  "orientacao": {
+    "azimute_fachada_frontal": {
+      "valor": 100
+    },
+    "local": {
+      "latitude": -15.78,
+      "longitude": -47.93,
+      "fuso_utc": -3,
+      "nome": "Brasília/DF"
+    }
+  },
+  "elementos_opcionais": {
+    "itens": [
+      {
+        "id": "brises",
+        "nome": "Brises horizontais",
+        "descricao": "Lâminas horizontais de alumínio em frente às janelas."
+      },
+      {
+        "id": "carenagens",
+        "nome": "Carenagens de ar-condicionado",
+        "descricao": "Caixas de ACM sob as janelas, para esconder os aparelhos de ar-condicionado."
+      },
+      {
+        "id": "granito",
+        "nome": "Revestimento em granito",
+        "descricao": "Placas de granito Branco Siena no lugar da pintura."
+      },
+      {
+        "id": "fulget",
+        "nome": "Textura Fulget Corten",
+        "descricao": "Textura efeito corten nas faixas horizontais da fachada."
+      }
+    ]
+  }
+}

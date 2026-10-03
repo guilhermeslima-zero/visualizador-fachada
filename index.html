@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualizador de fachada</title>
+<style>
+  :root{
+    --grafite:#2a2e2b; --cromio:#6e7672; --cromio-cl:#a9b0ac;
+    --verde:#5b7a6a; --gelo:#f4f3ef; --terra:#c1562e;
+    --tinta:#1e2220; --tinta2:#5a625e; --borda:#dcdfdb;
+    --painel:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;
+    font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif;
+    color:var(--tinta);background:var(--gelo)}
+  #cena{position:fixed;inset:0}
+  canvas{display:block}
+
+  /* ---------------------------------------------------------- painel */
+  #painel{
+    position:fixed;top:0;right:0;width:330px;height:100%;
+    background:var(--painel);border-left:1px solid var(--borda);
+    display:flex;flex-direction:column;z-index:10;
+    box-shadow:-8px 0 28px rgba(0,0,0,.07);transition:transform .25s ease}
+  #painel.oculto{transform:translateX(330px)}
+  #painel header{padding:18px 20px 14px;border-bottom:1px solid var(--borda)}
+  #painel header .kicker{font-size:10px;letter-spacing:.09em;font-weight:700;
+    color:var(--verde);text-transform:uppercase}
+  #painel header h1{margin:4px 0 2px;font-size:17px;font-weight:700}
+  #painel header p{margin:0;font-size:11.5px;color:var(--tinta2)}
+  #corpo{flex:1;overflow-y:auto;padding:4px 20px 20px}
+
+  .secao{margin-top:20px}
+  .secao > h2{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--cromio);margin:0 0 9px;font-weight:700}
+
+  /* paletas */
+  .paleta{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    padding:8px 10px;margin-bottom:6px;border:1px solid var(--borda);
+    border-radius:7px;background:#fff;cursor:pointer;font:inherit;font-size:12.5px}
+  .paleta:hover{border-color:var(--cromio-cl);background:#fafaf8}
+  .paleta.ativa{border-color:var(--verde);background:#f2f7f4;font-weight:600}
+  .paleta .txtp{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .selo{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:1px 6px;border-radius:9px;align-self:flex-start}
+  .selo.aprovado{background:#e3efe8;color:#2f5a44}
+  .selo.discussao{background:#fbeee5;color:#9a4720}
+  .selo.referencia{background:#eceeec;color:#5a625e}
+  #resumo{font-size:11px;color:var(--tinta2);margin-top:6px;line-height:1.4}
+  .amostras{display:flex;flex-shrink:0}
+  .amostras i{width:15px;height:24px;display:block;border:1px solid rgba(0,0,0,.14)}
+  .amostras i:first-child{border-radius:4px 0 0 4px}
+  .amostras i:last-child{border-radius:0 4px 4px 0}
+
+  /* toggles */
+  .tog{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;
+    border:1px solid var(--borda);border-radius:7px;margin-bottom:6px;background:#fff}
+  .tog input{margin:2px 0 0;flex-shrink:0;width:15px;height:15px;accent-color:var(--verde)}
+  .tog .txt{flex:1;min-width:0}
+  .tog .nome{font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+  .tog .custo{font-variant-numeric:tabular-nums;color:var(--terra);font-weight:700;
+    font-size:11.5px;white-space:nowrap}
+  .tog .desc{font-size:10.5px;color:var(--tinta2);margin-top:2px;line-height:1.35}
+
+  /* total */
+  #total{margin-top:12px;padding:12px 14px;background:var(--grafite);
+    color:#fff;border-radius:8px}
+  #total .rot{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--cromio-cl)}
+  #total .val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  #total .obs{font-size:10px;color:var(--cromio-cl);margin-top:5px;line-height:1.35}
+
+  /* modo de exibição */
+  .segmentado{display:flex;border:1px solid var(--borda);border-radius:7px;overflow:hidden}
+  .segmentado button{flex:1;padding:8px 4px;border:0;background:#fff;cursor:pointer;
+    font:inherit;font-size:11.5px;color:var(--tinta2);border-right:1px solid var(--borda)}
+  .segmentado button:last-child{border-right:0}
+  .segmentado button.ativa{background:var(--verde);color:#fff;font-weight:600}
+
+  .vistas{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .vistas button{padding:8px 2px;border:1px solid var(--borda);border-radius:7px;
+    background:#fff;cursor:pointer;font:inherit;font-size:11px;color:var(--tinta2)}
+  .vistas button:hover{border-color:var(--verde);color:var(--verde)}
+
+  .btn{display:block;width:100%;padding:10px;border:1px solid var(--borda);
+    border-radius:7px;background:#fff;cursor:pointer;font:inherit;font-size:12.5px;
+    margin-bottom:6px;text-align:left}
+  .btn:hover{border-color:var(--verde);color:var(--verde)}
+  .btn b{display:block;font-size:12.5px}
+  .btn span{display:block;font-size:10.5px;color:var(--tinta2);margin-top:2px}
+
+  .aviso{margin-top:18px;padding:10px 12px;background:#fdf3ee;
+    border:1px solid #f0c9b6;border-radius:7px;font-size:10.5px;
+    color:#8a3a1c;line-height:1.4}
+
+  /* sol */
+  .sol-linha{display:flex;align-items:center;gap:8px}
+  .sol-linha input[type=range]{flex:1;min-width:0;accent-color:var(--verde)}
+  #horaTxt{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;min-width:46px;text-align:right}
+  #play{width:34px;height:30px;border:1px solid var(--borda);border-radius:7px;background:#fff;
+    cursor:pointer;font-size:12px;color:var(--tinta2)}
+  #play:hover{border-color:var(--verde);color:var(--verde)}
+  #datas{margin-top:8px}
+  #datas button{font-size:10.5px;padding:7px 2px}
+  .mini{font-size:10.5px;color:var(--tinta2);margin-top:6px;line-height:1.35}
+  .mini.alerta{color:#8a3a1c}
+
+  /* indicador do norte */
+  #norte{position:fixed;left:16px;top:16px;z-index:9;width:48px;height:48px;border-radius:50%;
+    background:rgba(255,255,255,.92);border:1px solid var(--borda);display:flex;
+    align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  #norte svg{width:34px;height:34px;transition:none}
+
+  /* legenda do mapa de esquadrias */
+  #legenda{display:none;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11px}
+  #legenda.visivel{display:flex}
+  #legenda span{display:flex;align-items:center;gap:5px;color:var(--tinta2)}
+  #legenda i{width:11px;height:11px;border-radius:2px;display:block}
+
+  /* ---------------------------------------------------------- overlays */
+  #abrir{position:fixed;top:14px;right:14px;z-index:11;padding:9px 14px;
+    border:1px solid var(--borda);border-radius:7px;background:#fff;cursor:pointer;
+    font:inherit;font-size:12px;display:none;box-shadow:0 2px 10px rgba(0,0,0,.09)}
+  #painel.oculto ~ #abrir{display:block}
+
+  #info{position:fixed;left:16px;bottom:16px;z-index:9;background:rgba(255,255,255,.94);
+    border:1px solid var(--borda);border-radius:8px;padding:10px 14px;
+    font-size:11.5px;color:var(--tinta2);max-width:300px;backdrop-filter:blur(4px)}
+  #info b{color:var(--tinta)}
+
+  #tip{position:fixed;z-index:12;background:var(--grafite);color:#fff;padding:7px 10px;
+    border-radius:6px;font-size:11.5px;pointer-events:none;opacity:0;
+    transition:opacity .12s;white-space:nowrap;line-height:1.4}
+  #tip.on{opacity:1}
+
+  #carregando{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--gelo);z-index:50;font-size:13px;color:var(--tinta2);flex-direction:column;gap:10px}
+  #carregando .erro{color:var(--terra);max-width:520px;text-align:center;line-height:1.5}
+
+  @media (max-width:820px){
+    #painel{width:100%;max-width:100%}
+    #painel.oculto{transform:translateX(100%)}
+    #info{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="cena"></div>
+
+<div id="carregando"><div>Montando o modelo…</div></div>
+
+<button id="abrir">☰ Painel</button>
+
+<aside id="painel">
+  <header>
+    <div class="kicker">Estudo de fachada</div>
+    <h1>Visualizador da fachada</h1>
+    <p>Ferramenta de decisão — não é projeto executivo</p>
+  </header>
+  <div id="corpo">
+
+    <div class="secao">
+      <h2>Modo de exibição</h2>
+      <div class="segmentado" id="modos">
+        <button data-modo="projeto" class="ativa">Projeto</button>
+        <button data-modo="esquadrias">Esquadrias</button>
+        <button data-modo="massa">Volumetria</button>
+      </div>
+      <div id="legenda">
+        <span><i style="background:#c1562e"></i> Original de ferro</span>
+        <span><i style="background:#5b7a6a"></i> Já modificada</span>
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>Cenário</h2>
+      <div id="paletas"></div>
+      <div id="resumo"></div>
+    </div>
+
+    <div class="secao">
+      <h2>Elementos opcionais</h2>
+      <div id="opcionais"></div>
+      <div id="total">
+        <div class="rot">Adicional sobre a obra-base</div>
+        <div class="val" id="totalValor">R$ 0</div>
+        <div class="obs">Estimativas de ordem de grandeza para dar noção de
+          impacto relativo. Não são orçamentos.</div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>Vistas</h2>
+      <div class="vistas">
+        <button data-vista="frente">Frente</button>
+        <button data-vista="fundos">Fundos</button>
+        <button data-vista="lateral">Lateral</button>
+        <button data-vista="aerea">Aérea</button>
+        <button data-vista="pedestre">Pedestre</button>
+        <button data-vista="elevacao">Elevação</button>
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>Sol</h2>
+      <div class="sol-linha">
+        <input type="range" id="hora" min="360" max="1110" step="15" value="600"
+          aria-label="Hora do dia">
+        <span id="horaTxt">10h00</span>
+        <button id="play" title="Animar o dia">▶</button>
+      </div>
+      <div class="segmentado" id="datas">
+        <button data-data="verao" title="Solstício de verão, 21/12">Verão</button>
+        <button data-data="equinocio" title="Equinócios, 21/03 e 23/09">Equinócio</button>
+        <button data-data="inverno" title="Solstício de inverno, 21/06">Inverno</button>
+        <button data-data="hoje">Hoje</button>
+      </div>
+      <div class="mini" id="solInfo"></div>
+      <div class="mini">Orientação:
+        ângulo de ~100° estimado — ajustável em
+        <code>parametros-edificio.json › orientacao</code>.</div>
+    </div>
+
+    <div class="secao">
+      <h2>Exportar</h2>
+      <button class="btn" id="btnGlb">
+        <b>⬇ Baixar modelo .glb</b>
+        <span>Abre no Blender por File › Import › glTF 2.0. Mantém os nomes
+          dos grupos e só exporta o que está visível.</span>
+      </button>
+      <button class="btn" id="btnPng">
+        <b>⬇ Baixar imagem .png</b>
+        <span>Captura a vista atual em alta resolução.</span>
+      </button>
+    </div>
+
+    <div class="aviso">
+      <b>Sobre a precisão.</b> A posição de cada janela, carenagem, cobogó, torre,
+      pilar e porta foi medida no PDF vetorial (Revit) da arquiteta — prancha de
+      24/09/2026 e planta de 21/05/2026 — e é a mesma geometria da maquete do
+      Blender. As cores são aproximações de tela das tintas citadas. Nenhuma
+      medida tirada daqui serve para orçamento ou fabricação.
+    </div>
+
+  </div>
+</aside>
+
+<div id="info">
+  <b>Arraste</b> para girar · <b>rolagem</b> para aproximar · <b>botão direito</b> para deslocar<br>
+  <span id="infoEsq">No modo Esquadrias, passe o mouse numa janela para ver a unidade · <b>Esc</b> fecha.</span>
+</div>
+
+<div id="tip"></div>
+
+<div id="norte" title="Norte">
+  <svg viewBox="-22 -26 44 46" aria-label="Norte">
+    <polygon points="0,-15 6,4 0,0 -6,4" fill="#c1562e"/>
+    <polygon points="0,15 6,4 0,0 -6,4" fill="#a9b0ac"/>
+    <text x="0" y="-16" font-size="8" font-weight="700" text-anchor="middle"
+      fill="#c1562e" font-family="Segoe UI, sans-serif">N</text>
+  </svg>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<script src="modelo.js"></script>
+<script>
+(async function () {
+  const $ = (s) => document.querySelector(s);
+  const carregando = $("#carregando");
+  const R = Math.PI / 180;
+
+  // ------------------------------------------------------------ dados
+  let G, CEN, P;
+  try {
+    const ler = async (arq) => {
+      const r = await fetch(arq);
+      if (!r.ok) throw new Error(arq + ": HTTP " + r.status);
+      return r.json();
+    };
+    [G, CEN, P] = await Promise.all([
+      ler("geometria-executivo.json"), ler("cenarios.json"), ler("parametros-edificio.json"),
+    ]);
+  } catch (e) {
+    carregando.innerHTML =
+      '<div class="erro"><b>Não foi possível ler os arquivos do modelo.</b><br><br>' +
+      "Se você abriu o arquivo com duplo clique, o navegador bloqueia a leitura " +
+      "de arquivos locais. Use <code>abrir-visualizador.bat</code> ou rode:<br><br>" +
+      "<code>python -m http.server 8000</code><br><br>" +
+      "e acesse <code>http://localhost:8000</code>.<br><br>" +
+      "<small>Detalhe técnico: " + e.message + "</small></div>";
+    return;
+  }
+
+  // ------------------------------------------------------------ área útil
+  // O canvas ocupa só a área ao lado do painel (no celular o painel fica por cima).
+  const PAINEL_L = 330;
+  function areaUtil() {
+    const coberto = !$("#painel").classList.contains("oculto") && innerWidth > 820;
+    return { w: Math.max(200, innerWidth - (coberto ? PAINEL_L : 0)), h: innerHeight };
+  }
+
+  // ------------------------------------------------------------ cena
+  const CEU = new THREE.Color(0xdfe7ee);
+  const cena = new THREE.Scene();
+  cena.background = CEU.clone();
+  cena.fog = new THREE.Fog(CEU.clone(), 180, 520);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.3, 900);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  $("#cena").appendChild(renderer.domElement);
+
+  function redimensionar() {
+    const { w, h } = areaUtil();
+    $("#cena").style.right = innerWidth - w + "px";
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  redimensionar();
+
+  const controles = new THREE.OrbitControls(camera, renderer.domElement);
+  controles.enableDamping = true;
+  controles.dampingFactor = 0.08;
+  controles.maxPolarAngle = Math.PI / 2 - 0.02;
+  controles.minDistance = 3;
+  controles.maxDistance = 320;
+
+  // ------------------------------------------------------------ modelo
+  const modelo = criarModelo(G, CEN, THREE);
+  cena.add(modelo);
+  const GR = modelo.userData.grupos;
+  const MAT = modelo.userData.mat;
+  const DIM = modelo.userData.dimensoes;
+  const L = DIM.L, D = DIM.D;
+  // profundidade do JSON → Z do mundo (o modelo é espelhado em Z; ver modelo.js)
+  const mundo = (x, altura, prof) => new THREE.Vector3(x, altura, -prof);
+
+  // ------------------------------------------------------------ luzes
+  const hemi = new THREE.HemisphereLight(0xe4ecf4, 0x9a9f8c, 0.8);
+  const sol = new THREE.DirectionalLight(0xfffaf0, 0.9);
+  sol.castShadow = true;
+  sol.shadow.mapSize.set(4096, 4096);
+  sol.shadow.bias = -0.0003;
+  sol.shadow.normalBias = 0.03;
+  const preenchimento = new THREE.DirectionalLight(0xeef3f8, 0.18); // só tira o chapado da sombra
+  preenchimento.position.copy(mundo(L / 2 + 30, 60, D / 2 + 20));
+  cena.add(hemi, sol, sol.target, preenchimento);
+
+  carregando.remove();
+
+  // ------------------------------------------------------------ tooltip
+  const tip = $("#tip");
+  const esconderTip = () => tip.classList.remove("on");
+
+  // ------------------------------------------------------------ vistas
+  // Direção (x, altura, profundidade do JSON) a partir do centro do prédio; a
+  // distância é calculada para o prédio inteiro caber na área visível.
+  const CENTRO = [L / 2, 7, D / 2 + 0.8];
+  const VISTAS = {
+    frente: { dir: [0.55, 0.14, -1] },
+    fundos: { dir: [-0.55, 0.14, 1] },
+    lateral: { dir: [-0.8, 0.3, -0.6] },
+    aerea: { dir: [0.4, 0.85, -0.8] },
+    elevacao: { dir: [0, 0, -1] },
+    pedestre: { pos: [L * 0.62, 1.7, -15], alvo: [L * 0.4, 8, 0] },
+  };
+  const CANTOS = [];
+  [-1, L + 1].forEach((x) => [0, 15.2].forEach((h) => [-1, D + 3.2].forEach((p) =>
+    CANTOS.push(mundo(x, h, p)))));
+
+  function enquadrar(v) {
+    if (v.pos) return [mundo(...v.pos), mundo(...v.alvo)];
+    const alvo = mundo(...CENTRO);
+    const dir = mundo(...v.dir).normalize();
+    const cam = camera.clone();
+    const cabe = (dist) => {
+      cam.position.copy(alvo).addScaledVector(dir, dist);
+      cam.lookAt(alvo);
+      cam.updateMatrixWorld(true);
+      return CANTOS.every((c) => {
+        const p = c.clone().project(cam);
+        return p.z < 1 && Math.abs(p.x) <= 0.93 && Math.abs(p.y) <= 0.9;
+      });
+    };
+    let a = 5, b = 600;
+    for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (cabe(m)) b = m; else a = m; }
+    return [alvo.clone().addScaledVector(dir, b), alvo];
+  }
+
+  let vistaAtual = "frente";
+  function irPara(nome, instantaneo) {
+    esconderTip();
+    vistaAtual = nome;
+    const [para, alvoV] = enquadrar(VISTAS[nome]);
+    if (instantaneo) {
+      camera.position.copy(para); controles.target.copy(alvoV); controles.update();
+      return;
+    }
+    const de = camera.position.clone(), alvoDe = controles.target.clone();
+    const t0 = performance.now();
+    (function anima(t) {
+      const k = Math.min((t - t0) / 700, 1);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      camera.position.lerpVectors(de, para, e);
+      controles.target.lerpVectors(alvoDe, alvoV, e);
+      controles.update();
+      if (k < 1) requestAnimationFrame(anima);
+    })(t0);
+  }
+  document.querySelectorAll("[data-vista]").forEach((b) =>
+    b.addEventListener("click", () => irPara(b.dataset.vista))
+  );
+  controles.addEventListener("start", esconderTip);
+
+  // ------------------------------------------------------------ cenários
+  const ESPECIAIS = { granito: "#D9D7D2", granito_preto: "#1C1D20", fulget: "#6B4A40", pastilha: "#EDEDEA" };
+  const hex = (v) => (v == null ? "transparent" : ESPECIAIS[v] ||
+    (String(v).startsWith("#") ? v : CEN.tintas[v].hex));
+  const SELO = {
+    "aprovado em assembleia": "aprovado", "em discussão na comissão": "discussao", "referência": "referencia",
+  };
+  const elPaletas = $("#paletas");
+  const estado = { cenario: CEN.ordem[0], brises: false, carenagens: false, granito: false, fulget: false };
+
+  CEN.ordem.forEach((id) => {
+    const c = CEN.cenarios[id];
+    const b = document.createElement("button");
+    b.className = "paleta";
+    b.dataset.id = id;
+    b.innerHTML =
+      '<span class="amostras">' +
+      [c.zonas.faixa_sup, c.zonas.central, c.zonas.torres, c.carenagens]
+        .map((v) => `<i style="background:${hex(v)}"></i>`).join("") +
+      '</span><span class="txtp"><span>' + c.nome + "</span>" +
+      `<span class="selo ${SELO[c.status] || "referencia"}">${c.status}</span></span>`;
+    b.addEventListener("click", () => escolherCenario(id));
+    elPaletas.appendChild(b);
+  });
+
+  function escolherCenario(id) {
+    const c = CEN.cenarios[id];
+    estado.cenario = id;
+    estado.brises = !!c.brises;
+    estado.carenagens = !!c.carenagens;
+    estado.granito = Object.values(c.zonas).includes("granito");
+    estado.fulget = Object.values(c.zonas).includes("fulget");
+    elPaletas.querySelectorAll(".paleta").forEach((b) =>
+      b.classList.toggle("ativa", b.dataset.id === id));
+    $("#resumo").textContent = c.resumo;
+    sincronizar();
+  }
+
+  // ------------------------------------------------------------ opcionais
+  const elOpc = $("#opcionais");
+  const fmt = (n) => "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  // Versão pública: sem custos nem diagnóstico por unidade — a interface se adapta.
+  const TEM_CUSTOS = P.elementos_opcionais.itens.every((i) => typeof i.custo_estimado === "number");
+  const TEM_DIAGNOSTICO = !!P.diagnostico_esquadrias;
+  if (!TEM_CUSTOS) $("#total").style.display = "none";
+  if (!TEM_DIAGNOSTICO) {
+    $("#infoEsq").style.display = "none";
+    document.querySelector("[data-modo=esquadrias]").style.display = "none";
+    $("#legenda").style.display = "none";
+  }
+  P.elementos_opcionais.itens.forEach((it) => {
+    const w = document.createElement("label");
+    w.className = "tog";
+    w.innerHTML =
+      `<input type="checkbox" data-id="${it.id}">` +
+      '<span class="txt">' +
+      `<span class="nome">${it.nome}${TEM_CUSTOS ? `<span class="custo">+ ${fmt(it.custo_estimado)}</span>` : ""}</span>` +
+      `<span class="desc">${it.descricao}</span></span>`;
+    elOpc.appendChild(w);
+  });
+  elOpc.querySelectorAll("input").forEach((cb) =>
+    cb.addEventListener("change", () => {
+      estado[cb.dataset.id] = cb.checked;
+      sincronizar();
+    })
+  );
+
+  // ------------------------------------------------------------ modos
+  const MODIFICADAS = new Set(TEM_DIAGNOSTICO ? P.diagnostico_esquadrias.frente.unidades_modificadas : []);
+  let modo = "projeto";
+
+  function sincronizar() {
+    modelo.userData.aplicarCenario(estado.cenario,
+      { granito: estado.granito, fulget: estado.fulget });
+    elOpc.querySelectorAll("input").forEach((cb) => (cb.checked = !!estado[cb.dataset.id]));
+    if (TEM_CUSTOS) {
+      const t = P.elementos_opcionais.itens.filter((i) => estado[i.id])
+        .reduce((s, i) => s + i.custo_estimado, 0);
+      $("#totalValor").textContent = fmt(t);
+    }
+    aplicarModo(modo, true);
+  }
+
+  function aplicarModo(m, silencioso) {
+    esconderTip();
+    modo = m;
+    document.querySelectorAll("[data-modo]").forEach((b) =>
+      b.classList.toggle("ativa", b.dataset.modo === m));
+    $("#legenda").classList.toggle("visivel", m === "esquadrias");
+    const massa = m === "massa";
+    GR.Janelas.visible = !massa;
+    GR.Cobogos.visible = !massa;
+    GR.Brises.visible = !massa && m !== "esquadrias" && estado.brises;
+    GR.Carenagens.visible = !massa && estado.carenagens;
+    GR.Janelas.children.forEach((j) => {
+      const u = j.userData;
+      if (m === "esquadrias" && u.fachada === "frontal" && u.unidade) {
+        j.material = [MODIFICADAS.has(u.unidade) ? MAT.ok : MAT.alerta, MAT.vidro];
+      } else {
+        j.material = [MAT.esquadria, MAT.vidro];
+      }
+    });
+    if (m === "esquadrias" && !silencioso) irPara("elevacao");
+  }
+  document.querySelectorAll("[data-modo]").forEach((b) =>
+    b.addEventListener("click", () => aplicarModo(b.dataset.modo)));
+
+  // ------------------------------------------------------------ sol (Brasília)
+  // Posição solar pelo algoritmo simplificado da NOAA (declinação + equação do
+  // tempo). Precisão de alguns décimos de grau — suficiente para sombra.
+  const LOCAL = (P.orientacao && P.orientacao.local) || { latitude: -15.78, longitude: -47.93, fuso_utc: -3 };
+  const AZ_FRENTE = P.orientacao ? P.orientacao.azimute_fachada_frontal.valor : 100;
+
+  function posicaoSolar(diaDoAno, minutosLocais) {
+    const lat = LOCAL.latitude * R;
+    const g = (2 * Math.PI / 365) * (diaDoAno - 1 + (minutosLocais / 60 - 12) / 24);
+    const eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
+      - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+    const dec = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g)
+      - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g)
+      - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+    const tst = minutosLocais + eqt + 4 * LOCAL.longitude - 60 * LOCAL.fuso_utc;
+    const ha = (tst / 4 - 180) * R;
+    const cosZ = Math.sin(lat) * Math.sin(dec) + Math.cos(lat) * Math.cos(dec) * Math.cos(ha);
+    const zen = Math.acos(Math.max(-1, Math.min(1, cosZ)));
+    let az = Math.atan2(Math.sin(ha), Math.cos(ha) * Math.sin(lat) - Math.tan(dec) * Math.cos(lat)) / R + 180;
+    az = (az + 360) % 360;
+    return { elevacao: 90 - zen / R, azimute: az };
+  }
+
+  /** Direção (unitária, no mundo) de onde vem a luz de um azimute/elevação. */
+  function direcaoMundo(azimute, elevacao) {
+    // δ = ângulo, no sentido horário, entre a normal da fachada frontal e o sol.
+    // Nos dados: frente = -Y e +X aponta para (frente - 90°). No mundo, Z = -Y.
+    const dl = (azimute - AZ_FRENTE) * R, el = elevacao * R;
+    return new THREE.Vector3(-Math.sin(dl) * Math.cos(el), Math.sin(el), Math.cos(dl) * Math.cos(el));
+  }
+
+  const CANTOS_SOMBRA = [];
+  [-1, L + 1].forEach((x) => [0, 15.2].forEach((h) => [-1.5, D + 3.5].forEach((p) =>
+    CANTOS_SOMBRA.push(mundo(x, h, p)))));
+  const ALVO_SOL = mundo(L / 2, 0, D / 2);
+
+  /** Câmera de sombra cobre o prédio e a sombra projetada, em qualquer hora. */
+  function ajustarSombra(dir) {
+    sol.position.copy(ALVO_SOL).addScaledVector(dir, 200);
+    sol.target.position.copy(ALVO_SOL);
+    sol.target.updateMatrixWorld();
+    const cam = sol.shadow.camera;
+    cam.position.copy(sol.position);
+    cam.lookAt(ALVO_SOL);
+    cam.updateMatrixWorld(true);
+    const inv = cam.matrixWorldInverse;
+    const pts = [];
+    CANTOS_SOMBRA.forEach((c) => {
+      pts.push(c);
+      if (c.y > 0) {
+        // ponta da sombra: segue o raio de luz até o chão (limitado a 140 m com sol rasante)
+        const t = Math.min(c.y / Math.max(dir.y, 1e-3), 140);
+        pts.push(c.clone().addScaledVector(dir, -t));
+      }
+    });
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    pts.forEach((p) => {
+      const v = p.clone().applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x);
+      y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+      z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z);
+    });
+    Object.assign(cam, { left: x0 - 2, right: x1 + 2, bottom: y0 - 2, top: y1 + 2,
+      near: Math.max(0.5, -z1 - 20), far: -z0 + 20 });
+    cam.updateProjectionMatrix();
+  }
+
+  const DATAS = {
+    verao: { nome: "solstício de verão (21/12)", dia: 355 },
+    equinocio: { nome: "equinócio (21/03 · 23/09)", dia: 80 },
+    inverno: { nome: "solstício de inverno (21/06)", dia: 172 },
+    hoje: { nome: "hoje", dia: null },
+  };
+  const diaDoAnoHoje = () => {
+    const h = new Date(), i = new Date(h.getFullYear(), 0, 0);
+    return Math.floor((h - i) / 86400000);
+  };
+  const solEstado = { data: "hoje", minutos: 10 * 60 };
+  const cQuente = new THREE.Color(0xffb27a), cDia = new THREE.Color(0xfffaf0);
+  const cNoite = new THREE.Color(0x46505e);
+
+  function aplicarSol() {
+    const dt = DATAS[solEstado.data];
+    const dia = dt.dia == null ? diaDoAnoHoje() : dt.dia;
+    const { elevacao, azimute } = posicaoSolar(dia, solEstado.minutos);
+    const dir = direcaoMundo(azimute, Math.max(elevacao, 0.5));
+    const k = Math.max(0, Math.min(1, elevacao / 12));         // 0 no horizonte, 1 acima de 12°
+    sol.intensity = 0.8 * k;
+    sol.castShadow = elevacao > 0.5;
+    sol.color.copy(cQuente).lerp(cDia, Math.max(0, Math.min(1, elevacao / 25)));
+    hemi.intensity = 0.42 + 0.26 * Math.max(0, Math.sin(Math.max(elevacao, 0) * R));
+    const fundo = cNoite.clone().lerp(CEU, Math.max(0, Math.min(1, (elevacao + 4) / 14)));
+    cena.background.copy(fundo);
+    cena.fog.color.copy(fundo);
+    ajustarSombra(dir);
+    const hh = Math.floor(solEstado.minutos / 60), mm = solEstado.minutos % 60;
+    $("#horaTxt").textContent = `${hh}h${String(mm).padStart(2, "0")}`;
+    $("#hora").value = solEstado.minutos;
+    document.querySelectorAll("[data-data]").forEach((b) =>
+      b.classList.toggle("ativa", b.dataset.data === solEstado.data));
+    const pontos = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];
+    $("#solInfo").textContent = elevacao <= 0
+      ? `Sol abaixo do horizonte — ${dt.nome}`
+      : `Sol a ${elevacao.toFixed(0)}° de altura, vindo do ${pontos[Math.round(azimute / 45) % 8]} ` +
+        `(azimute ${azimute.toFixed(0)}°) — ${dt.nome}`;
+  }
+  $("#hora").addEventListener("input", (e) => { solEstado.minutos = +e.target.value; aplicarSol(); });
+  document.querySelectorAll("[data-data]").forEach((b) =>
+    b.addEventListener("click", () => { solEstado.data = b.dataset.data; aplicarSol(); }));
+  let animacao = null;
+  $("#play").addEventListener("click", () => {
+    if (animacao) { clearInterval(animacao); animacao = null; $("#play").textContent = "▶"; return; }
+    $("#play").textContent = "⏸";
+    animacao = setInterval(() => {
+      solEstado.minutos = solEstado.minutos >= 1110 ? 360 : solEstado.minutos + 5;
+      aplicarSol();
+    }, 60);
+  });
+
+  // ------------------------------------------------------------ estado pelo endereço
+  // index.html#cenario=opcao02&vista=fundos&modo=esquadrias&hora=16:30&data=inverno&painel=0
+  function lerEndereco(primeira) {
+    const hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get("painel") === "0") $("#painel").classList.add("oculto");
+    if (hash.get("painel") === "1") $("#painel").classList.remove("oculto");
+    redimensionar();
+    if (primeira || hash.get("cenario")) {
+      escolherCenario(CEN.cenarios[hash.get("cenario")] ? hash.get("cenario") : estado.cenario);
+    }
+    if (DATAS[hash.get("data")]) solEstado.data = hash.get("data");
+    const hora = /^(\d{1,2}):(\d{2})$/.exec(hash.get("hora") || "");
+    if (hora) solEstado.minutos = Math.max(360, Math.min(1110, +hora[1] * 60 + +hora[2]));
+    aplicarSol();
+    irPara(VISTAS[hash.get("vista")] ? hash.get("vista") : (primeira ? "frente" : vistaAtual), true);
+    const modoPedido = hash.get("modo");
+    if (["projeto", "massa"].includes(modoPedido) || (modoPedido === "esquadrias" && TEM_DIAGNOSTICO)) {
+      aplicarModo(modoPedido, true);
+    }
+  }
+  lerEndereco(true);
+  addEventListener("hashchange", () => lerEndereco(false));
+
+  // ------------------------------------------------------------ seleção
+  const raycaster = new THREE.Raycaster();
+  const ponteiro = new THREE.Vector2();
+  function janelaSob(e) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ponteiro.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ponteiro.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera(ponteiro, camera);
+    const hit = raycaster.intersectObjects(GR.Janelas.children, false)[0];
+    const d = hit && hit.object.userData;
+    return d && d.unidade ? d : null;
+  }
+  function mostrarTip(e) {
+    if (modo !== "esquadrias") { esconderTip(); return; }
+    const d = janelaSob(e);
+    if (!d) { esconderTip(); return; }
+    const orig = !MODIFICADAS.has(d.unidade);
+    tip.innerHTML =
+      `<b>Unidade ${d.unidade}</b> · ${d.ambiente} · ${d.pavimento}º pav.<br>` +
+      `${d.tipo} — ${d.largura.toFixed(2)} × ${d.altura.toFixed(2)} m<br>` +
+      (orig ? "⚠ esquadria original de ferro" : "✓ já modificada pelo morador") +
+      "<br><small>numeração por convenção — conferir com o síndico</small>";
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 260) + "px";
+    tip.style.top = e.clientY + 14 + "px";
+    tip.classList.add("on");
+  }
+  renderer.domElement.addEventListener("pointermove", (e) => { if (!e.buttons) mostrarTip(e); });
+  renderer.domElement.addEventListener("pointerdown", (e) => {
+    if (modo === "esquadrias" && janelaSob(e)) mostrarTip(e); else esconderTip();
+  });
+  renderer.domElement.addEventListener("pointerleave", esconderTip);
+  addEventListener("keydown", (e) => { if (e.key === "Escape") esconderTip(); });
+
+  // ------------------------------------------------------------ exportar
+  $("#btnGlb").addEventListener("click", () => {
+    const exp = new THREE.GLTFExporter();
+    const alvoExp = new THREE.Group();
+    alvoExp.name = "Fachada";
+    alvoExp.scale.z = -1;   // mesma correção de eixos do modelo
+    modelo.children.forEach((c) => {
+      if (c.name !== "Terreno" && c.visible) alvoExp.add(c.clone(true));
+    });
+    exp.parse(alvoExp, (gltf) => {
+      const blob = new Blob([gltf], { type: "model/gltf-binary" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Fachada-${estado.cenario}.glb`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, { binary: true });
+  });
+
+  $("#btnPng").addEventListener("click", () => {
+    const { w, h } = areaUtil();
+    renderer.setPixelRatio(2);
+    renderer.setSize(w, h);
+    renderer.render(cena, camera);
+    const url = renderer.domElement.toDataURL("image/png");
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(w, h);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Fachada-${estado.cenario}.png`;
+    link.click();
+  });
+
+  // ------------------------------------------------------------ painel
+  function alternarPainel(abrir) {
+    $("#painel").classList.toggle("oculto", !abrir);
+    redimensionar();
+  }
+  $("#abrir").addEventListener("click", () => alternarPainel(true));
+  addEventListener("keydown", (e) => {
+    if (e.key === "p" || e.key === "P") alternarPainel($("#painel").classList.contains("oculto"));
+  });
+
+  // ------------------------------------------------------------ norte
+  const NORTE = new THREE.Vector3(Math.sin(AZ_FRENTE * R), 0, Math.cos(AZ_FRENTE * R)); // ver direcaoMundo
+  const frente = new THREE.Vector3(), direita = new THREE.Vector3();
+  function atualizarNorte() {
+    camera.getWorldDirection(frente);
+    frente.y = 0; frente.normalize();
+    direita.crossVectors(frente, camera.up).normalize();
+    const ang = Math.atan2(NORTE.dot(direita), NORTE.dot(frente)) / R;
+    $("#norte svg").style.transform = `rotate(${ang}deg)`;
+  }
+
+  // gancho para depuração pelo console do navegador
+  window.fachada = { modelo, camera, renderer, cena, estado, solEstado };
+
+  // ------------------------------------------------------------ loop
+  addEventListener("resize", redimensionar);
+  (function loop() {
+    requestAnimationFrame(loop);
+    controles.update();
+    atualizarNorte();
+    // troca o nível de detalhe dos brises (perto: lâminas; longe: painel com
+    // textura com mipmaps, sem moiré) — feito aqui para não depender do autoUpdate
+    if (GR.Brises.visible) GR.Brises.children.forEach((lod) => lod.update(camera));
+    renderer.render(cena, camera);
+  })();
+})();
+</script>
+</body>
+</html>

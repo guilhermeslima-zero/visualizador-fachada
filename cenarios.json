@@ -1,0 +1,70 @@
+{
+ "_nota": "Cenários de revestimento e cor da fachada, compartilhados pelo gerador do Blender (gerador do Blender) e pelo visualizador web (index.html). A volumetria é a mesma em todos; muda revestimento, cor e elementos opcionais. Cores das tintas amostradas das bolinhas de cor das pranchas da arquiteta (25/08/2026) — aproximação de tela, não amostra física.",
+ "_valores_especiais": "Nas zonas, além de um nome de tinta ou de um hex, valem: granito (Branco Siena em placas), granito_preto, fulget (textura Fulget Corten) e pastilha (porcelana 5x5 branca).",
+ "tintas": {
+  "branco_neve": {"hex": "#F1F1EE", "nome": "Branco Neve (Suvinil, executivo 2026)"},
+  "branco_gelo": {"hex": "#E8E8E4", "nome": "Branco Gelo"},
+  "cromio": {"hex": "#B7B6B1", "nome": "Crômio"},
+  "cinza_natural": {"hex": "#929292", "nome": "Cinza Natural"},
+  "capim_de_cheiro": {"hex": "#919784", "nome": "Capim de Cheiro"},
+  "verde_babosa": {"hex": "#99A68C", "nome": "Verde Babosa"},
+  "fulget_corten": {"hex": "#6B4A40", "nome": "Textura Fulget Corten"},
+  "acm_jade_silver": {"hex": "#8E9C92", "nome": "ACM Jade Silver"},
+  "verde_carenagem": {"hex": "#76825F", "nome": "Verde das carenagens nos renders de 25/08"},
+  "terreo_escuro": {"hex": "#5F6066", "nome": "Cinza escuro do térreo nos renders de 25/08"},
+  "atual_faixas": {"hex": "#3B3D42", "nome": "Faixas escuras atuais (não medido)"},
+  "atual_central": {"hex": "#C9C6BE", "nome": "Plano central atual (não medido)"}
+ },
+ "ordem": ["aprovado2024", "executivo2026", "opcao01", "opcao02", "opcao03", "opcao04", "atual"],
+ "cenarios": {
+  "aprovado2024": {
+   "nome": "Projeto aprovado (AGE 08/2024)",
+   "resumo": "Granito Branco Siena em placas, brises em todas as janelas, carenagens em ACM. É o que a assembleia aprovou e o que a arquiteta entregou primeiro (prancha 22/10/2024).",
+   "status": "aprovado em assembleia",
+   "zonas": {"faixa_sup": "granito", "central": "granito", "faixa_inf": "granito", "torres": "granito"},
+   "carenagens": "acm_jade_silver", "brises": true, "esquadria": "#C4C7C9", "terreo": "pastilha"
+  },
+  "executivo2026": {
+   "nome": "Projeto executivo (05/2026)",
+   "resumo": "Pintura branco neve, carenagens em ACM, sem brises.",
+   "status": "em discussão na comissão",
+   "zonas": {"faixa_sup": "branco_neve", "central": "branco_neve", "faixa_inf": "branco_neve", "torres": "branco_neve"},
+   "carenagens": "acm_jade_silver", "brises": false, "esquadria": "#C4C7C9", "terreo": "pastilha"
+  },
+  "opcao01": {
+   "nome": "Opção 01 — Cinza Natural + Crômio",
+   "resumo": "Faixas em Cinza Natural, plano central em Crômio (renders de 25/08/2026).",
+   "status": "em discussão na comissão",
+   "zonas": {"faixa_sup": "cinza_natural", "central": "cromio", "faixa_inf": "cinza_natural", "torres": "cromio"},
+   "carenagens": "verde_carenagem", "brises": false, "esquadria": "#E9E9E6", "terreo": "terreo_escuro"
+  },
+  "opcao02": {
+   "nome": "Opção 02 — Branco Gelo + Crômio + Capim de Cheiro",
+   "resumo": "Faixas em Crômio, plano central Branco Gelo, torres em Capim de Cheiro (renders de 25/08/2026).",
+   "status": "em discussão na comissão",
+   "zonas": {"faixa_sup": "cromio", "central": "branco_gelo", "faixa_inf": "cromio", "torres": "capim_de_cheiro"},
+   "carenagens": "verde_carenagem", "brises": false, "esquadria": "#E9E9E6", "terreo": "terreo_escuro"
+  },
+  "opcao03": {
+   "nome": "Opção 03 — Verde Babosa + Capim de Cheiro + Branco Gelo",
+   "resumo": "Faixas e torres em Verde Babosa, plano central Branco Gelo, carenagens Capim de Cheiro (renders de 25/08/2026).",
+   "status": "em discussão na comissão",
+   "zonas": {"faixa_sup": "verde_babosa", "central": "branco_gelo", "faixa_inf": "verde_babosa", "torres": "verde_babosa"},
+   "carenagens": "capim_de_cheiro", "brises": false, "esquadria": "#E9E9E6", "terreo": "terreo_escuro"
+  },
+  "opcao04": {
+   "nome": "Opção 04 — Verde Babosa + Fulget Corten + Branco Gelo",
+   "resumo": "Faixas em textura Fulget Corten, plano central Branco Gelo, torres Verde Babosa (renders de 25/08/2026).",
+   "status": "em discussão na comissão",
+   "zonas": {"faixa_sup": "fulget", "central": "branco_gelo", "faixa_inf": "fulget", "torres": "verde_babosa"},
+   "carenagens": "verde_carenagem", "brises": false, "esquadria": "#E9E9E6", "terreo": "terreo_escuro"
+  },
+  "atual": {
+   "nome": "Estado atual (aproximação)",
+   "resumo": "Faixas escuras, torres em granito preto, sem carenagens. Cores não medidas; as esquadrias aparecem já novas.",
+   "status": "referência",
+   "zonas": {"faixa_sup": "atual_faixas", "central": "atual_central", "faixa_inf": "atual_faixas", "torres": "granito_preto"},
+   "carenagens": null, "brises": false, "esquadria": "#6E6E6A", "terreo": "pastilha"
+  }
+ }
+}
